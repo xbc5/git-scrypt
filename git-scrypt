@@ -12,11 +12,17 @@ kend="-----key_end-----"
 asc=".git-scrypt.asc"
 kfile="./.git/git-crypt/keys/default"
 
+function tidy() {
+  [[ -n "$1" ]] && rm -f "$1"
+}
+
 # grab the default key, and encrypt it into a local file
 function encrypt() {
   [[ -f "$kfile" ]] || { echo "No key file: run init first."; exit 1; }
 
+  # importing via stdin does not work; using this hack
   tmp="`mktemp`"
+  trap "tidy $tmp" ERR
   git-crypt export-key "$tmp"
 
   gpg -a --output "$asc" --symmetric --cipher-algo AES256 << EOF
