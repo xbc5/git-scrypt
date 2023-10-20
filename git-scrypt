@@ -42,11 +42,16 @@ function init() {
   [[ -f "$kfile" ]] || git-crypt init
 }
 
-function help() {
+function _help() {
   cat << EOF
-  e,encrypt    extact key and save it to '$asc'
-  d,decrypt    decrypt key from '$asc' and set it locally
-  i,init       initialise git-crypt: create a new key
+Usage: $(basename $0) COMMAND
+Save a git-crypt key into your repository as an encrytped file.
+
+  COMMAND
+    e,encrypt    extact key and save it to '$asc'
+    d,decrypt    decrypt key from '$asc' and set it locally
+    i,init       initialise git-crypt: create a new key
+
 EOF
 }
 
@@ -54,5 +59,7 @@ case "$cmd" in
   e|encrypt) encrypt;;
   i|init) init;;
   d|decrypt) decrypt;;
-  *) echo "Unknown command: '$cmd'";;
+  h|help|-h) _help;;
+  *) echo "Unknown command: '$cmd'"
+     _help;;
 esac
