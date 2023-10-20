@@ -1,4 +1,7 @@
 # git-scrypt
+
+Dependencies: `bash`; `GPG`; `OpenSSL`; `git-crypt` and `base64`.
+
 ```
 Usage: $(basename $0) COMMAND
 Save a git-crypt key into your repository as an encrytped file.
