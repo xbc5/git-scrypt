@@ -1,0 +1,58 @@
+#!/bin/bash
+
+set -e
+
+cmd="$1"
+
+[[ -d ".git" ]] || { echo "You must run this in a git repo."; exit 1; }
+
+# delimit key section between padding
+kstart="-----key_start-----"
+kend="-----key_end-----"
+asc=".git-scrypt.asc"
+kfile="./.git/git-crypt/keys/default"
+
+# grab the default key, and encrypt it into a local file
+function encrypt() {
+  [[ -f "$kfile" ]] || { echo "No key file: run init first."; exit 1; }
+  gpg -a --output "$asc" --symmetric --cipher-algo AES256 << EOF
+$(openssl rand -base64 `rdm`)
+$(echo -e "$kstart")
+$(cat ./.git/git-crypt/keys/default | base64)
+$(echo -e "$kend")
+$(openssl rand -base64 `rdm`)
+EOF
+}
+
+# grab the encrypted local file, and send it to the local git-crypt default key
+function decrypt() {
+  [[ -f "$kfile" ]] && echo "Keyfile already exists, remove it." && exit 1;
+  gpg --decrypt "$asc" \
+    | sed -n "/${kstart}/,/${kend}/{/${kstart}/b;/${kend}/b;p}" \
+    | base64 --decode \
+    > "$kfile"
+}
+
+# rdm num: 500-1000
+function rdm() {
+  shuf -i 500-1000 -n 1
+}
+
+function init() {
+  [[ -f "$kfile" ]] || git-crypt init
+}
+
+function help() {
+  cat << EOF
+  e,encrypt    extact key and save it to '$asc'
+  d,decrypt    decrypt key from '$asc' and set it locally
+  i,init       initialise git-crypt: create a new key
+EOF
+}
+
+case "$cmd" in
+  e|encrypt) encrypt;;
+  i|init) init;;
+  d|decrypt) decrypt;;
+  *) echo "Unknown command: '$cmd'";;
+esac
