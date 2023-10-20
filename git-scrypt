@@ -15,13 +15,19 @@ kfile="./.git/git-crypt/keys/default"
 # grab the default key, and encrypt it into a local file
 function encrypt() {
   [[ -f "$kfile" ]] || { echo "No key file: run init first."; exit 1; }
+
+  tmp="`mktemp`"
+  git-crypt export-key "$tmp"
+
   gpg -a --output "$asc" --symmetric --cipher-algo AES256 << EOF
 $(openssl rand -base64 `rdm`)
 $(echo -e "$kstart")
-$(cat "$kfile" | base64)
+$(cat "$tmp" | base64)
 $(echo -e "$kend")
 $(openssl rand -base64 `rdm`)
 EOF
+
+  rm -f "$tmp" >/dev/null 2>&1
 }
 
 # grab the encrypted local file, and send it to the local git-crypt default key
@@ -30,7 +36,7 @@ function decrypt() {
   gpg --decrypt "$asc" \
     | sed -n "/${kstart}/,/${kend}/{/${kstart}/b;/${kend}/b;p}" \
     | base64 --decode \
-    > "$kfile"
+    | git-crypt unlock -
 }
 
 # rdm num: 500-1000
